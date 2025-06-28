@@ -1,9 +1,14 @@
-﻿using System;
-
-namespace DewAdvancedEmulator.Core
+﻿namespace DewAdvancedEmulator.Core
 {
     public class Memory
     {
+        #region - Var -
+
+        private MMIO mmio;
+        public void ConnectMMIO(MMIO io) => mmio = io;
+
+        #endregion
+
         #region - Memory Byte Allocations -
 
         private byte[] bios = new byte[0x4000];
@@ -44,7 +49,13 @@ namespace DewAdvancedEmulator.Core
             else if (address >= 0x06000000 && address < 0x06018000)
                 return vram[address - 0x06000000];
             else if (address >= 0x04000000 && address < 0x04000400)
-                return ioRegisters[address - 0x04000000];
+            {
+                // MMIO override first
+                if (mmio != null)
+                    return mmio.ReadByte(address);
+                else
+                    return ioRegisters[address - 0x04000000];
+            }
             else if (address >= 0x08000000 && address < 0x0E000000 && cartridgeRom != null)
                 return cartridgeRom[address - 0x08000000];
             else
@@ -59,7 +70,13 @@ namespace DewAdvancedEmulator.Core
             else if (address >= 0x06000000 && address < 0x06018000)
                 vram[address - 0x06000000] = value;
             else if (address >= 0x04000000 && address < 0x04000400)
-                ioRegisters[address - 0x04000000] = value;
+            {
+                // MMIO override first
+                if (mmio != null)
+                    mmio.WriteByte(address, value);
+                else
+                    ioRegisters[address - 0x04000000] = value;
+            }
             else
             {
                 // ignore writes to BIOS or ROM for now
@@ -84,7 +101,14 @@ namespace DewAdvancedEmulator.Core
             WriteByte(address, (byte)(value & 0xFF));
             WriteByte(address + 1, (byte)((value >> 8) & 0xFF));
         }
-        
+        public void WriteWord(uint address, uint value)
+        {
+            WriteByte(address, (byte)(value & 0xFF));
+            WriteByte(address + 1, (byte)((value >> 8) & 0xFF));
+            WriteByte(address + 2, (byte)((value >> 16) & 0xFF));
+            WriteByte(address + 3, (byte)((value >> 24) & 0xFF));
+        }
+
         #endregion
 
 

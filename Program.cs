@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection;
-using System.Runtime.CompilerServices;
+﻿using DewAdvancedEmulator.Core;
 
 public static class Program
 {
@@ -15,8 +13,23 @@ public static class Program
         }
 
         string romPath = args[0];
+        string biosPath = args[1];
 
         byte[] romData = File.ReadAllBytes(romPath);
+        byte[] biosData = File.ReadAllBytes(biosPath);
+
+        var memory = new Memory();
+        memory.LoadBios(biosData);
+        memory.LoadRom(romData);
+
+        var cpu = new CPU();
+        cpu.ConnectMemory(memory);
+        cpu.Reset();
+        while (true)
+        {
+            cpu.Step();
+            Thread.Sleep(16);
+        }
     }
     
 }
